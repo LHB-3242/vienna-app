@@ -16,7 +16,7 @@ function App() {
           <Route path="/state-security-protocols" element={<StateProtocols />} />
           <Route path="/admin-vienna-rp" element={<AdminPanel />} />
         </Routes>
-      <Router>
+     </Router>
     </div>
   );
 }
