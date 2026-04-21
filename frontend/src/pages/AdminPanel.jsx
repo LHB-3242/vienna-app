@@ -146,7 +146,7 @@ const AdminPanel = () => {
         </div>
 
         {/* فورم الإضافة */}
-        export default AdminPanel;
+        {isAdding && (
           <Card className="bg-zinc-900 border-zinc-700 mb-8 overflow-hidden animate-in fade-in slide-in-from-top-4">
             <CardHeader className="bg-zinc-800/50 py-4 flex flex-row justify-between items-center">
               <CardTitle className="text-lg text-pink-400">إضافة عنصر جديد</CardTitle>
