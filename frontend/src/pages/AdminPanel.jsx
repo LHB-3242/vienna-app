@@ -16,8 +16,6 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  
-  // حالات الإضافة والتعديل
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
@@ -53,26 +51,25 @@ const AdminPanel = () => {
     try {
       if (editingId) {
         await axios.put(`${API}/${activeTab}/${editingId}`, formData);
-        toast({ title: 'تم التعديل', description: 'تم تحديث البيانات بنجاح' });
       } else {
         await axios.post(`${API}/${activeTab}`, formData);
-        toast({ title: 'تمت الإضافة', description: 'تمت إضافة العنصر الجديد' });
       }
       setFormData({ title: '', content: '' });
       setIsAdding(false);
       setEditingId(null);
       fetchData();
+      toast({ title: 'تم الحفظ', description: 'نجحت العملية' });
     } catch (error) {
       toast({ title: 'خطأ', description: 'فشل حفظ البيانات', variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('هل أنت متأكد من الحذف؟')) {
+    if (window.confirm('حذف؟')) {
       try {
         await axios.delete(`${API}/${activeTab}/${id}`);
-        toast({ title: 'تم الحذف', description: 'تم حذف العنصر بنجاح' });
         fetchData();
+        toast({ title: 'تم الحذف', description: 'تم بنجاح' });
       } catch (error) {
         toast({ title: 'خطأ', description: 'فشل الحذف', variant: 'destructive' });
       }
@@ -81,17 +78,17 @@ const AdminPanel = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 text-right" dir="rtl">
         <Toaster />
         <Card className="w-full max-w-md bg-zinc-900 border-pink-900 text-white shadow-2xl">
           <CardHeader className="text-center border-b border-pink-900/50 pb-6">
             <Lock className="w-12 h-12 mx-auto mb-2 text-pink-500" />
-            <CardTitle className="text-2xl font-bold font-arabic">إدارة Vienna RP</CardTitle>
+            <CardTitle className="text-2xl font-bold">إدارة Vienna RP</CardTitle>
           </CardHeader>
           <CardContent className="p-8">
             <form onSubmit={handleLogin} className="space-y-6">
               <Input type="password" placeholder="كلمة المرور" value={password} onChange={(e) => setPassword(e.target.value)} className="text-center bg-zinc-800 border-zinc-700 text-white" />
-              <Button type="submit" className="w-full bg-pink-700 hover:bg-pink-800 font-bold py-6">تأكيد</Button>
+              <Button type="submit" className="w-full bg-pink-700 hover:bg-pink-800 font-bold py-6">دخول</Button>
             </form>
           </CardContent>
         </Card>
@@ -108,26 +105,26 @@ const AdminPanel = () => {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-8 justify-center">
-          <Button onClick={() => setActiveTab('laws')} className={`px-8 py-4 font-bold ${activeTab === 'laws' ? 'bg-pink-600' : 'bg-zinc-800'}`}>القوانين <Shield className="mr-2" /></Button>
-          <Button onClick={() => setActiveTab('protocols')} className={`px-8 py-4 font-bold ${activeTab === 'protocols' ? 'bg-pink-600' : 'bg-zinc-800'}`}>البروتوكولات <FileText className="mr-2" /></Button>
+          <Button onClick={() => setActiveTab('laws')} className={`px-8 py-4 font-bold ${activeTab === 'laws' ? 'bg-pink-600' : 'bg-zinc-800'}`}>القوانين</Button>
+          <Button onClick={() => setActiveTab('protocols')} className={`px-8 py-4 font-bold ${activeTab === 'protocols' ? 'bg-pink-600' : 'bg-zinc-800'}`}>البروتوكولات</Button>
         </div>
 
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-bold text-zinc-400">{activeTab === 'laws' ? 'قوانين أمن الدولة' : 'بروتوكولات أمن الدولة'}</h2>
-          <Button onClick={() => setIsAdding(true)} className="bg-green-600 hover:bg-green-700 px-6 font-bold">إضافة جديد <Plus className="mr-2" /></Button>
+          <Button onClick={() => setIsAdding(true)} className="bg-green-600 hover:bg-green-700 font-bold px-6">إضافة جديد +</Button>
         </div>
 
         {(isAdding || editingId) && (
-          <Card className="bg-zinc-900 border-zinc-700 mb-8 overflow-hidden animate-in fade-in slide-in-from-top-4">
+          <Card className="bg-zinc-900 border-zinc-700 mb-8 overflow-hidden">
             <CardHeader className="bg-zinc-800/50 py-4 flex flex-row justify-between items-center">
-              <CardTitle className="text-lg text-pink-400">{editingId ? 'تعديل عنصر' : 'إضافة عنصر جديد'}</CardTitle>
-              <Button size="icon" variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); }}><X className="w-5 h-5" /></Button>
+              <CardTitle className="text-lg text-pink-400">{editingId ? 'تعديل' : 'إضافة'}</CardTitle>
+              <Button size="icon" variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); }}><X /></Button>
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <Input placeholder="العنوان" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="bg-zinc-800 border-zinc-700" required />
-                <Textarea placeholder="المحتوى" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} className="bg-zinc-800 border-zinc-700 min-h-[150px]" required />
-                <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 py-6 text-lg font-bold"><Save className="ml-2" /> حفظ التغييرات</Button>
+                <Input placeholder="العنوان" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="bg-zinc-800 border-zinc-700 text-white" required />
+                <Textarea placeholder="المحتوى" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} className="bg-zinc-800 border-zinc-700 min-h-[150px] text-white" required />
+                <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 font-bold py-6">حفظ</Button>
               </form>
             </CardContent>
           </Card>
@@ -144,5 +141,18 @@ const AdminPanel = () => {
                     <h3 className="text-lg font-bold text-pink-400 mb-2">{item.title}</h3>
                     <p className="text-zinc-400 whitespace-pre-wrap">{item.content}</p>
                   </div>
-                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="icon" variant="outline" onClick={() => { setEditingId(item.id || item._id); setFormData({title: item.title, content: item.content});
+                  <div className="flex flex-col gap-2">
+                    <Button size="icon" variant="outline" onClick={() => { setEditingId(item.id || item._id); setFormData({title: item.title, content: item.content}); }} className="border-zinc-700 text-blue-400"><Edit2 className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="outline" onClick={() => handleDelete(item.id || item._id)} className="border-zinc-700 text-red-400"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminPanel;
