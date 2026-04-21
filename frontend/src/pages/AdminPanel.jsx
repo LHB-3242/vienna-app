@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Shield, FileText } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Shield, FileText, Lock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -12,37 +12,47 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('laws'); // 'laws' or 'protocols'
+  const [activeTab, setActiveTab] = useState('laws');
   const [laws, setLaws] = useState([]);
   const [protocols, setProtocols] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // نظام حماية بسيط للدخول
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, [activeTab]);
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [activeTab, isAuthenticated]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      if (activeTab === 'laws') {
-        const response = await axios.get(`${API}/laws`);
-        setLaws(response.data);
-      } else {
-        const response = await axios.get(`${API}/protocols`);
-        setProtocols(response.data);
-      }
+      const endpoint = activeTab === 'laws' ? 'laws' : 'protocols';
+      const response = await axios.get(`${API}/${endpoint}`);
+      if (activeTab === 'laws') setLaws(response.data);
+      else setProtocols(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast({
-        title: 'خطأ',
-        description: 'فشل في تحميل البيانات',
-        variant: 'destructive'
-      });
+      toast({ title: 'خطأ', description: 'فشل في تحميل البيانات', variant: 'destructive' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // وظيفة التحقق من كلمة المرور (تقدر تغير 1234 لأي باسورد تبي)
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === '1234') { 
+      setIsAuthenticated(true);
+      toast({ title: 'نجح', description: 'مرحباً بك في لوحة التحكم' });
+    } else {
+      toast({ title: 'خطأ', description: 'كلمة المرور غير صحيحة', variant: 'destructive' });
     }
   };
 
@@ -51,78 +61,34 @@ const AdminPanel = () => {
 
   const handleAdd = async () => {
     if (!formData.title || !formData.content) {
-      toast({
-        title: 'خطأ',
-        description: 'الرجاء ملء جميع الحقول',
-        variant: 'destructive'
-      });
+      toast({ title: 'خطأ', description: 'الرجاء ملء جميع الحقول', variant: 'destructive' });
       return;
     }
-
     try {
       const response = await axios.post(`${API}/rules`, {
         title: formData.title,
         content: formData.content,
         category: activeTab === 'laws' ? 'law' : 'protocol'
       });
-
       setCurrentData([...currentData, response.data]);
-      setFormData({ title: '', content: '' });
-      setIsAdding(false);
-      toast({
-        title: 'نجح',
-        description: 'تم الإضافة بنجاح'
-      });
+      handleCancel();
+      toast({ title: 'نجح', description: 'تم الإضافة بنجاح' });
     } catch (error) {
-      console.error('Error adding:', error);
-      toast({
-        title: 'خطأ',
-        description: 'فشل في الإضافة',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const handleEdit = (id) => {
-    const item = currentData.find(item => item.id === id);
-    if (item) {
-      setFormData({ title: item.title, content: item.content });
-      setEditingId(id);
+      toast({ title: 'خطأ', description: 'فشل في الإضافة', variant: 'destructive' });
     }
   };
 
   const handleUpdate = async () => {
-    if (!formData.title || !formData.content) {
-      toast({
-        title: 'خطأ',
-        description: 'الرجاء ملء جميع الحقول',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     try {
       const response = await axios.put(`${API}/rules/${editingId}`, {
         title: formData.title,
         content: formData.content
       });
-
-      setCurrentData(currentData.map(item => 
-        item.id === editingId ? response.data : item
-      ));
-      setFormData({ title: '', content: '' });
-      setEditingId(null);
-      toast({
-        title: 'نجح',
-        description: 'تم التحديث بنجاح'
-      });
+      setCurrentData(currentData.map(item => item.id === editingId ? response.data : item));
+      handleCancel();
+      toast({ title: 'نجح', description: 'تم التحديث بنجاح' });
     } catch (error) {
-      console.error('Error updating:', error);
-      toast({
-        title: 'خطأ',
-        description: 'فشل في التحديث',
-        variant: 'destructive'
-      });
+      toast({ title: 'خطأ', description: 'فشل في التحديث', variant: 'destructive' });
     }
   };
 
@@ -131,17 +97,9 @@ const AdminPanel = () => {
       try {
         await axios.delete(`${API}/rules/${id}`);
         setCurrentData(currentData.filter(item => item.id !== id));
-        toast({
-          title: 'نجح',
-          description: 'تم الحذف بنجاح'
-        });
+        toast({ title: 'نجح', description: 'تم الحذف بنجاح' });
       } catch (error) {
-        console.error('Error deleting:', error);
-        toast({
-          title: 'خطأ',
-          description: 'فشل في الحذف',
-          variant: 'destructive'
-        });
+        toast({ title: 'خطأ', description: 'فشل في الحذف', variant: 'destructive' });
       }
     }
   };
@@ -152,170 +110,90 @@ const AdminPanel = () => {
     setIsAdding(false);
   };
 
+  // شاشة تسجيل الدخول إذا لم يكن المستخدم موثقاً
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100 flex items-center justify-center p-4">
+        <Toaster />
+        <Card className="w-full max-w-md shadow-2xl border-2 border-pink-200">
+          <CardHeader className="bg-gradient-to-r from-pink-600 to-purple-600 text-white text-center rounded-t-lg">
+            <Lock className="w-12 h-12 mx-auto mb-2" />
+            <CardTitle className="text-2xl">دخول الإدارة</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                type="password"
+                placeholder="أدخل كلمة مرور الإدارة"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="text-center border-2 border-pink-100"
+              />
+              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 text-white py-6 text-lg">
+                دخول
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // الكود الأساسي للوحة التحكم بعد تسجيل الدخول
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100">
       <Toaster />
-      
-      {/* Header */}
-      <header className="bg-gradient-to-r from-pink-900 via-purple-900 to-pink-900 text-white py-6 px-4 shadow-2xl">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center gap-4">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_c486fc1f-6d38-4395-b181-39a9a2989cf0/artifacts/tdjrzc77_image.png" 
-              alt="Vienna RP Logo" 
-              className="h-14 w-14 rounded-lg shadow-lg"
-            />
-            <div className="text-center">
-              <h1 className="text-3xl font-bold">لوحة التحكم - Vienna RP</h1>
-              <p className="text-pink-200 text-sm">إدارة القوانين والبروتوكلات</p>
-            </div>
-          </div>
-        </div>
+      <header className="bg-gradient-to-r from-pink-900 via-purple-900 to-pink-900 text-white py-6 px-4 shadow-2xl text-center">
+        <h1 className="text-3xl font-bold">لوحة التحكم - Vienna RP</h1>
+        <p className="text-pink-200 text-sm">مرحباً بك أيها المسؤول</p>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Tabs */}
         <div className="flex gap-4 mb-8 justify-center">
-          <Button
-            onClick={() => {
-              setActiveTab('laws');
-              setFormData({ title: '', content: '' });
-              setEditingId(null);
-              setIsAdding(false);
-            }}
-            className={`px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 ${
-              activeTab === 'laws'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xl scale-105'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-lg'
-            }`}
-          >
-            <Shield className="w-5 h-5 ml-2" />
-            قوانين أمن الدولة
+          <Button onClick={() => setActiveTab('laws')} className={`px-8 py-6 rounded-xl transition-all ${activeTab === 'laws' ? 'bg-pink-500 text-white shadow-xl scale-105' : 'bg-white text-gray-700'}`}>
+            <Shield className="ml-2" /> قوانين أمن الدولة
           </Button>
-          <Button
-            onClick={() => {
-              setActiveTab('protocols');
-              setFormData({ title: '', content: '' });
-              setEditingId(null);
-              setIsAdding(false);
-            }}
-            className={`px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 ${
-              activeTab === 'protocols'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-xl scale-105'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-lg'
-            }`}
-          >
-            <FileText className="w-5 h-5 ml-2" />
-            بروتوكلات أمن الدولة
+          <Button onClick={() => setActiveTab('protocols')} className={`px-8 py-6 rounded-xl transition-all ${activeTab === 'protocols' ? 'bg-purple-500 text-white shadow-xl scale-105' : 'bg-white text-gray-700'}`}>
+            <FileText className="ml-2" /> بروتوكلات أمن الدولة
           </Button>
         </div>
 
-        {/* Add Button */}
         {!isAdding && !editingId && (
           <div className="mb-8 flex justify-center">
-            <Button
-              onClick={() => setIsAdding(true)}
-              className="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl shadow-xl text-lg font-semibold"
-            >
-              <Plus className="w-5 h-5 ml-2" />
-              إضافة جديد
+            <Button onClick={() => setIsAdding(true)} className="bg-green-500 hover:bg-green-600 text-white px-10 py-4 rounded-xl text-lg shadow-lg">
+              <Plus className="ml-2" /> إضافة جديد
             </Button>
           </div>
         )}
 
-        {/* Add/Edit Form */}
         {(isAdding || editingId) && (
-          <Card className="mb-8 bg-white/90 backdrop-blur-sm shadow-2xl border-2 border-pink-200">
-            <CardHeader className="bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-t-lg">
-              <CardTitle className="text-2xl text-center">
-                {editingId ? 'تعديل' : 'إضافة جديد'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2 text-right">العنوان</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="أدخل العنوان"
-                  className="text-right border-2 border-pink-200 focus:border-pink-500"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2 text-right">المحتوى</label>
-                <Textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  placeholder="أدخل المحتوى"
-                  rows={8}
-                  className="text-right border-2 border-pink-200 focus:border-pink-500"
-                />
-              </div>
-              <div className="flex gap-4 justify-center">
-                <Button
-                  onClick={editingId ? handleUpdate : handleAdd}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg"
-                >
-                  <Save className="w-5 h-5 ml-2" />
-                  {editingId ? 'تحديث' : 'حفظ'}
-                </Button>
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="px-6 py-3 border-2 border-gray-300 hover:bg-gray-100 rounded-lg"
-                >
-                  <X className="w-5 h-5 ml-2" />
-                  إلغاء
-                </Button>
+          <Card className="mb-8 border-2 border-pink-200 shadow-xl">
+            <CardHeader className="bg-pink-500 text-white"><CardTitle>{editingId ? 'تعديل' : 'إضافة جديد'}</CardTitle></CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <Input placeholder="العنوان" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="text-right" />
+              <Textarea placeholder="المحتوى" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} rows={6} className="text-right" />
+              <div className="flex justify-center gap-4">
+                <Button onClick={editingId ? handleUpdate : handleAdd} className="bg-green-500 text-white px-8"><Save className="ml-2"/> حفظ</Button>
+                <Button onClick={handleCancel} variant="outline"><X className="ml-2"/> إلغاء</Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent"></div>
-            <p className="mt-4 text-gray-600">جاري التحميل...</p>
-          </div>
-        )}
-
-        {/* List */}
-        {!loading && (
+        {loading ? (
+          <div className="text-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div></div>
+        ) : (
           <div className="space-y-4">
-            {currentData.length === 0 && (
-              <div className="bg-yellow-100 border-2 border-yellow-400 text-yellow-700 px-6 py-4 rounded-xl text-center">
-                لا توجد بيانات متاحة حالياً
-              </div>
-            )}
-            
             {currentData.map((item, index) => (
-              <Card key={item.id} className="bg-white/90 backdrop-blur-sm shadow-xl border-2 border-pink-200/50 hover:shadow-2xl transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 text-right">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                          {index + 1}
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800">{item.title}</h3>
-                      </div>
-                      <p className="text-gray-600 leading-relaxed whitespace-pre-line">{item.content}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleEdit(item.id)}
-                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white p-3 rounded-lg"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDelete(item.id)}
-                        className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white p-3 rounded-lg"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </Button>
-                    </div>
+              <Card key={item.id} className="hover:shadow-xl transition-all border-r-4 border-r-pink-500">
+                <CardContent className="p-6 flex justify-between items-start">
+                  <div className="text-right flex-1">
+                    <h3 className="text-xl font-bold mb-2">{index + 1}. {item.title}</h3>
+                    <p className="text-gray-600 whitespace-pre-line">{item.content}</p>
+                  </div>
+                  <div className="flex gap-2 mr-4">
+                    <Button onClick={() => { setEditingId(item.id); setFormData({title: item.title, content: item.content}); }} className="bg-blue-500 text-white"><Edit2 size={18}/></Button>
+                    <Button onClick={() => handleDelete(item.id)} className="bg-red-500 text-white"><Trash2 size={18}/></Button>
                   </div>
                 </CardContent>
               </Card>
