@@ -8,7 +8,8 @@ import { toast } from '../hooks/use-toast';
 import { Toaster } from '../components/ui/toaster';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// تم وضع الرابط مباشرة هنا لحل مشكلة "process is not defined"
+const BACKEND_URL = "https://vienna-app-backend.onrender.com"; 
 const API = `${BACKEND_URL}/api`;
 
 const AdminPanel = () => {
@@ -34,14 +35,14 @@ const AdminPanel = () => {
       const endpoint = activeTab === 'laws' ? 'laws' : 'protocols';
       const response = await axios.get(`${API}/${endpoint}`);
       
-      // حماية: التأكد أن البيانات مصفوفة لعدم حدوث شاشة بيضاء
+      // التأكد أن البيانات مصفوفة لضمان عدم حدوث شاشة بيضاء
       const data = Array.isArray(response.data) ? response.data : [];
       
       if (activeTab === 'laws') setLaws(data);
       else setProtocols(data);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast({ title: 'خطأ', description: 'فشل في تحميل البيانات', variant: 'destructive' });
+      toast({ title: 'خطأ', description: 'فشل في الاتصال بالسيرفر', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -51,27 +52,20 @@ const AdminPanel = () => {
     e.preventDefault();
     if (password === '1234') { 
       setIsAuthenticated(true);
-      toast({ title: 'نجح', description: 'مرحباً بك في لوحة التحكم' });
+      toast({ title: 'نجح', description: 'تم الدخول بنجاح' });
     } else {
-      toast({ title: 'خطأ', description: 'كلمة المرور غير صحيحة', variant: 'destructive' });
+      toast({ title: 'خطأ', description: 'كلمة المرور غلط', variant: 'destructive' });
     }
   };
 
   const currentData = activeTab === 'laws' ? laws : protocols;
-  const setCurrentData = activeTab === 'laws' ? setLaws : setProtocols;
-
-  const handleCancel = () => {
-    setFormData({ title: '', content: '' });
-    setEditingId(null);
-    setIsAdding(false);
-  };
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100 flex items-center justify-center p-4 text-right">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex items-center justify-center p-4 text-right">
         <Toaster />
-        <Card className="w-full max-w-md shadow-2xl border-2 border-pink-200">
-          <CardHeader className="bg-gradient-to-r from-pink-600 to-purple-600 text-white text-center rounded-t-lg">
+        <Card className="w-full max-w-md shadow-2xl border-2 border-pink-900/50 bg-gray-800 text-white">
+          <CardHeader className="bg-gradient-to-r from-pink-900 to-purple-900 text-white text-center rounded-t-lg">
             <Lock className="w-12 h-12 mx-auto mb-2" />
             <CardTitle className="text-2xl font-bold">دخول الإدارة</CardTitle>
           </CardHeader>
@@ -79,13 +73,13 @@ const AdminPanel = () => {
             <form onSubmit={handleLogin} className="space-y-4">
               <Input
                 type="password"
-                placeholder="أدخل كلمة مرور الإدارة"
+                placeholder="أدخل كلمة المرور"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="text-center border-2 border-pink-100"
+                className="text-center bg-gray-700 border-pink-900 text-white"
               />
-              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 text-white py-6 text-lg font-bold shadow-lg">
-                دخول
+              <Button type="submit" className="w-full bg-pink-700 hover:bg-pink-800 text-white py-6 text-lg font-bold">
+                تأكيد الدخول
               </Button>
             </form>
           </CardContent>
@@ -95,40 +89,39 @@ const AdminPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 text-right">
+    <div className="min-h-screen bg-gray-100 text-right font-sans" dir="rtl">
       <Toaster />
-      <header className="bg-gradient-to-r from-pink-900 via-purple-900 to-pink-900 text-white py-6 px-4 shadow-2xl text-center">
-        <h1 className="text-3xl font-bold">لوحة التحكم - Vienna RP</h1>
+      <header className="bg-pink-900 text-white py-6 shadow-lg text-center">
+        <h1 className="text-3xl font-bold">لوحة إدارة Vienna RP</h1>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-8 justify-center">
-          <Button onClick={() => setActiveTab('laws')} className={`px-8 py-6 rounded-xl transition-all font-bold ${activeTab === 'laws' ? 'bg-pink-500 text-white shadow-xl scale-105' : 'bg-white text-gray-700'}`}>
-            قوانين أمن الدولة <Shield className="mr-2" />
+          <Button onClick={() => setActiveTab('laws')} className={`px-6 py-4 rounded-lg font-bold ${activeTab === 'laws' ? 'bg-pink-700 text-white' : 'bg-white text-gray-700'}`}>
+            القوانين <Shield className="mr-2" size={18}/>
           </Button>
-          <Button onClick={() => setActiveTab('protocols')} className={`px-8 py-6 rounded-xl transition-all font-bold ${activeTab === 'protocols' ? 'bg-purple-500 text-white shadow-xl scale-105' : 'bg-white text-gray-700'}`}>
-            بروتوكلات أمن الدولة <FileText className="mr-2" />
+          <Button onClick={() => setActiveTab('protocols')} className={`px-6 py-4 rounded-lg font-bold ${activeTab === 'protocols' ? 'bg-pink-700 text-white' : 'bg-white text-gray-700'}`}>
+            البروتوكولات <FileText className="mr-2" size={18}/>
           </Button>
         </div>
 
         {loading ? (
-          <div className="text-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div></div>
+          <div className="text-center py-10"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-700 mx-auto"></div></div>
         ) : (
-          <div className="space-y-4">
-            {/* استخدام الشرط لضمان عدم حدوث خطأ .map */}
+          <div className="grid gap-4">
             {Array.isArray(currentData) && currentData.length > 0 ? (
               currentData.map((item, index) => (
-                <Card key={item.id || index} className="hover:shadow-xl transition-all border-r-4 border-r-pink-500 bg-white">
-                  <CardContent className="p-6 flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2">{index + 1}. {item.title}</h3>
-                      <p className="text-gray-600 whitespace-pre-line">{item.content}</p>
+                <Card key={item.id || index} className="bg-white border-r-4 border-pink-700 shadow-sm">
+                  <CardContent className="p-5 flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-bold text-pink-900">{index + 1}. {item.title}</h3>
+                      <p className="text-gray-600 mt-1">{item.content}</p>
                     </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="text-center p-10 bg-white rounded-xl shadow">لا توجد بيانات حالياً أو هناك مشكلة في الاتصال بالسيرفر</div>
+              <div className="text-center p-10 bg-white rounded-lg shadow">لا توجد بيانات حالياً في هذا القسم</div>
             )}
           </div>
         )}
